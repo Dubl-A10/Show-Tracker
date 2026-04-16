@@ -274,6 +274,11 @@ function switchTab(t) {
     document.getElementById('tab-btn-'+name).classList.toggle('active', name===t);
     document.getElementById('tab-'+name).classList.toggle('active', name===t);
   });
+  if (calOpen) {
+    calOpen = false;
+    document.getElementById('cal-overlay').classList.remove('open');
+    document.getElementById('cal-chevron').classList.remove('open');
+  }
 }
 
 // ── Pieces ────────────────────────────────────────────────
