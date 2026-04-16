@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#E8722A"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Show Tracker"/>
+<title>Show Tracker</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#1E1E1E;--bg2:#272727;--bg3:#303030;
+  --orange:#E8722A;--orange-soft:#F4A96A;
+  --cream:#F0E8D8;--cream-dim:#B8A898;--cream-muted:#7A6E64;
+  --border:#3A3A3A;--border2:#484848;
+  --green-bg:#1A3020;--green-txt:#6FD49A;
+  --red-bg:#2E1A1A;--red-txt:#F07070;
+  --blue-bg:#1A2333;--blue-txt:#7AB8F0;
+  --gold-bg:#2E2010;--gold-txt:#E8B84A;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+html{background:var(--bg);height:100%;}
+body{
+  background:var(--bg);
+  font-family:'DM Mono',monospace;
+  color:var(--cream);
+  max-width:430px;
+  margin:0 auto;
+  min-height:100vh;
+  min-height:100dvh;
+  display:flex;
+  flex-direction:column;
+  padding-top:var(--safe-top);
+  padding-bottom:var(--safe-bot);
+}
+
+/* HEADER */
+.header{padding:16px 18px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;}
+.app-title{font-family:'DM Serif Display',serif;font-size:24px;color:var(--cream);letter-spacing:-0.5px;}
+.due-badge{font-size:11px;background:var(--orange);color:#fff;padding:3px 10px;border-radius:20px;font-weight:500;}
+.sub{font-size:11px;color:var(--cream-muted);}
+
+/* SUMMARY */
+.summary-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:12px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.sum-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 8px;text-align:center;}
+.sum-val{font-size:15px;font-weight:500;color:var(--orange-soft);}
+.sum-lbl{font-size:10px;color:var(--cream-muted);margin-top:3px;}
+
+/* TABS */
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 18px;flex-shrink:0;}
+.tab{padding:12px 0;font-size:14px;margin-right:28px;cursor:pointer;color:var(--cream-muted);border-bottom:2px solid transparent;transition:color 0.15s,border-color 0.15s;user-select:none;}
+.tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+
+/* SCROLL CONTENT */
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.section{padding:14px;display:none;}
+.section.active{display:block;}
+
+/* INPUTS / BUTTONS */
+input[type=text],input[type=number]{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:12px 12px;font-family:'DM Mono',monospace;font-size:14px;color:var(--cream);
+  outline:none;-webkit-appearance:none;appearance:none;width:100%;
+}
+input::placeholder{color:var(--cream-muted);}
+input:focus{border-color:var(--orange);}
+.btn{
+  background:var(--orange);color:#fff;border:none;border-radius:8px;
+  padding:12px 16px;font-family:'DM Mono',monospace;font-size:14px;
+  cursor:pointer;white-space:nowrap;font-weight:500;
+}
+.btn:active{opacity:0.8;transform:scale(0.97);}
+.btn.sm{padding:7px 13px;font-size:12px;border-radius:6px;}
+.btn.stop{background:var(--red-bg);color:var(--red-txt);border:1px solid #5A2A2A;}
+.btn.ghost{background:var(--bg3);color:var(--cream-dim);border:1px solid var(--border);}
+
+/* ADD BAR */
+.add-bar{display:flex;gap:8px;margin-bottom:14px;}
+.add-bar input{flex:1;}
+
+/* PIECE CARDS */
+.piece-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px;}
+.piece-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:8px;}
+.piece-name{font-size:14px;font-weight:500;color:var(--cream);flex:1;word-break:break-word;}
+.piece-head-right{display:flex;gap:6px;align-items:center;flex-shrink:0;}
+.stage-pill{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500;cursor:pointer;user-select:none;white-space:nowrap;}
+.s-sketch{background:var(--gold-bg);color:var(--gold-txt);}
+.s-wip{background:var(--blue-bg);color:var(--blue-txt);}
+.s-done{background:var(--green-bg);color:var(--green-txt);}
+.s-final{background:#221A30;color:#C4A0F0;}
+.time-row{display:flex;align-items:center;gap:10px;}
+.time-display{font-size:22px;font-weight:500;color:var(--orange-soft);font-variant-numeric:tabular-nums;min-width:80px;}
+.time-sub{font-size:10px;color:var(--cream-muted);margin-top:2px;}
+.timer-btns{margin-left:auto;}
+.log-entry{border-top:1px solid var(--border);padding-top:8px;margin-top:10px;}
+.log-line{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;color:var(--cream-muted);}
+.log-line span:last-child{color:var(--cream-dim);}
+.delete-btn{background:none;border:none;color:var(--cream-muted);cursor:pointer;font-size:20px;padding:0 2px;line-height:1;}
+.delete-btn:active{color:var(--red-txt);}
+
+/* MATERIALS */
+.mat-add-form{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+.form-row{display:flex;gap:8px;margin-bottom:10px;}
+.form-row input:first-child{flex:1;}
+.form-row input:last-child{width:90px;flex-shrink:0;}
+.total-bar{background:var(--orange);color:#fff;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.total-bar span{font-size:12px;opacity:0.85;}
+.total-bar strong{font-size:18px;}
+.mat-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.mat-info{flex:1;min-width:0;}
+.mat-name{font-size:13px;font-weight:500;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mat-date{font-size:11px;color:var(--cream-muted);margin-top:2px;}
+.mat-cost{font-size:16px;font-weight:500;color:var(--orange-soft);flex-shrink:0;}
+.empty{text-align:center;color:var(--cream-muted);font-size:12px;padding:28px 0;}
+
+/* CALENDAR STRIP */
+.cal-strip{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;padding:6px 10px calc(6px + var(--safe-bot));scrollbar-width:none;cursor:pointer;user-select:none;}
+.cal-strip::-webkit-scrollbar{display:none;}
+.cal-strip-inner{display:flex;gap:10px;width:max-content;}
+.cal-mini-month{display:flex;flex-direction:column;align-items:center;}
+.cal-mini-name{font-size:8px;color:var(--cream-muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:0.6px;}
+.cal-mini-days{display:grid;grid-template-columns:repeat(7,8px);gap:1px;}
+.cal-mini-day{width:8px;height:8px;border-radius:50%;background:var(--bg3);}
+.cal-mini-day.tracked{background:var(--orange);}
+.cal-mini-day.today{background:transparent;outline:1px solid var(--orange-soft);}
+.cal-mini-day.today.tracked{background:var(--orange);outline:none;}
+.cal-mini-day.future{background:transparent;}
+.cal-mini-day.empty{background:transparent;}
+.cal-chevron{text-align:center;font-size:10px;color:var(--cream-muted);line-height:1;padding-bottom:2px;transition:transform 0.25s;}
+.cal-chevron.open{transform:rotate(180deg);}
+
+/* CALENDAR EXPANDED */
+.cal-overlay{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--bg);border-top:2px solid var(--border);z-index:50;max-height:0;overflow:hidden;transition:max-height 0.3s cubic-bezier(0.4,0,0.2,1);}
+.cal-overlay.open{max-height:72vh;}
+.cal-overlay-inner{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 14px 8px;max-height:72vh;}
+.cal-exp-month{margin-bottom:18px;}
+.cal-exp-name{font-size:11px;font-weight:500;color:var(--cream-muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;}
+.cal-exp-dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px;}
+.cal-exp-dow span{font-size:9px;color:var(--cream-muted);text-align:center;}
+.cal-exp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+.cal-exp-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;background:var(--bg3);}
+.cal-exp-day.tracked{background:var(--orange);}
+.cal-exp-day.today{outline:1px solid var(--orange-soft);}
+.cal-exp-day.today.tracked{outline:none;}
+.cal-exp-day.future{opacity:0.3;}
+.cal-exp-day.empty{background:transparent;}
+.cal-exp-day-num{font-size:11px;color:var(--cream-dim);line-height:1;}
+.cal-exp-day.tracked .cal-exp-day-num{color:#fff;font-weight:500;}
+.cal-exp-day.today:not(.tracked) .cal-exp-day-num{color:var(--orange-soft);}
+.cal-exp-day-time{font-size:7px;color:rgba(255,255,255,0.85);line-height:1;margin-top:2px;}
+
+/* TOAST */
+.toast{
+  position:fixed;bottom:calc(20px + var(--safe-bot));left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--bg3);border:1px solid var(--border);color:var(--cream);
+  padding:10px 20px;border-radius:20px;font-size:12px;
+  opacity:0;transition:opacity 0.2s,transform 0.2s;pointer-events:none;white-space:nowrap;z-index:999;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="app-title">Show Tracker</div>
+    <div class="due-badge">Due Oct 2025</div>
+  </div>
+  <div class="sub">gallery production log</div>
+</div>
+
+<div class="summary-row">
+  <div class="sum-card"><div class="sum-val" id="s-pieces">0</div><div class="sum-lbl">pieces</div></div>
+  <div class="sum-card"><div class="sum-val" id="s-hours">0h 0m</div><div class="sum-lbl">logged</div></div>
+  <div class="sum-card"><div class="sum-val" id="s-cost">$0</div><div class="sum-lbl">materials</div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" id="tab-btn-pieces" onclick="switchTab('pieces')">Pieces</div>
+  <div class="tab" id="tab-btn-materials" onclick="switchTab('materials')">Materials</div>
+</div>
+
+<div class="scroll-area">
+  <div class="section active" id="tab-pieces">
+    <div class="add-bar">
+      <input type="text" id="new-piece-name" placeholder="New piece name..." autocomplete="off" autocorrect="off"/>
+      <button class="btn" onclick="addPiece()">+ Add</button>
+    </div>
+    <div id="pieces-list"></div>
+  </div>
+
+  <div class="section" id="tab-materials">
+    <div class="mat-add-form">
+      <div class="form-row">
+        <input type="text" id="mat-name" placeholder="Material / item..." autocomplete="off" autocorrect="off"/>
+        <input type="number" id="mat-cost" placeholder="$0.00" step="0.01" min="0" inputmode="decimal"/>
+      </div>
+      <button class="btn" style="width:100%;font-size:14px;" onclick="addMaterial()">+ Log Purchase</button>
+    </div>
+    <div class="total-bar">
+      <span>total spent</span>
+      <strong id="mat-total">$0.00</strong>
+    </div>
+    <div id="materials-list"></div>
+  </div>
+</div>
+
+<div class="cal-overlay" id="cal-overlay">
+  <div class="cal-overlay-inner" id="cal-overlay-inner">
+    <div id="cal-expanded-grid"></div>
+  </div>
+</div>
+
+<div class="cal-strip" id="cal-strip" onclick="toggleCalendar()">
+  <div class="cal-chevron" id="cal-chevron">▲</div>
+  <div class="cal-strip-inner" id="calendar-grid"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Storage ──────────────────────────────────────────────
+const STORE_KEY = 'showtracker_v1';
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || {pieces:[],materials:[]}; }
+  catch(e) { return {pieces:[],materials:[]}; }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({pieces, materials})); }
+  catch(e) { showToast('Save failed — storage full?'); }
+}
+
+// ── State ─────────────────────────────────────────────────
+const data = load();
+let pieces = data.pieces;
+let materials = data.materials;
+let timers = {};       // id -> elapsed seconds (live, not persisted)
+let intervals = {};    // id -> setInterval handle
+
+// ── Helpers ───────────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+function fmtTime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return h > 0
+    ? `${h}h ${String(m).padStart(2,'0')}m`
+    : `${m}m ${String(sec).padStart(2,'0')}s`;
+}
+
+function totalSecs(p) {
+  return (p.sessions||[]).reduce((a,s) => a+s.secs, 0) + (timers[p.id]||0);
+}
+
+function today() {
+  return new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function switchTab(t) {
+  ['pieces','materials'].forEach(name => {
+    document.getElementById('tab-btn-'+name).classList.toggle('active', name===t);
+    document.getElementById('tab-'+name).classList.toggle('active', name===t);
+  });
+}
+
+// ── Pieces ────────────────────────────────────────────────
+const STAGES = ['sketch','wip','done','final'];
+const STAGE_LABELS = {sketch:'Sketch', wip:'In Progress', done:'Complete', final:'Final'};
+const STAGE_CLASS  = {sketch:'s-sketch', wip:'s-wip', done:'s-done', final:'s-final'};
+
+function addPiece() {
+  const inp = document.getElementById('new-piece-name');
+  const name = inp.value.trim();
+  if (!name) return;
+  pieces.push({id:uid(), name, stage:'sketch', sessions:[]});
+  inp.value = '';
+  save(); renderPieces(); updateSummary();
+  showToast('Piece added');
+}
+
+document.getElementById('new-piece-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPiece();
+});
+
+function cycleStage(id) {
+  const p = pieces.find(x => x.id===id); if (!p) return;
+  p.stage = STAGES[(STAGES.indexOf(p.stage)+1) % STAGES.length];
+  save(); renderPieces();
+  showToast('Stage → ' + STAGE_LABELS[p.stage]);
+}
+
+function startTimer(id) {
+  if (intervals[id]) return;
+  timers[id] = timers[id] || 0;
+  const start = Date.now() - timers[id]*1000;
+  intervals[id] = setInterval(() => {
+    timers[id] = Math.floor((Date.now()-start)/1000);
+    const el = document.getElementById('td-'+id);
+    if (el) el.textContent = fmtTime(timers[id]);
+    updateSummary();
+  }, 1000);
+  renderPieces(); showToast('Timer started');
+}
+
+function stopTimer(id) {
+  if (!intervals[id]) return;
+  clearInterval(intervals[id]); delete intervals[id];
+  const secs = timers[id] || 0;
+  if (secs > 0) {
+    const p = pieces.find(x => x.id===id);
+    if (p) {
+      const now = new Date();
+      p.sessions.push({
+        secs,
+        label: now.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+               +' '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})
+      });
+      save();
+    }
+  }
+  timers[id] = 0;
+  renderPieces(); updateSummary();
+  showToast('Session saved — '+fmtTime(secs));
+}
+
+function deletePiece(id) {
+  if (!confirm('Delete this piece?')) return;
+  if (intervals[id]) { clearInterval(intervals[id]); delete intervals[id]; }
+  delete timers[id];
+  pieces = pieces.filter(x => x.id!==id);
+  save(); renderPieces(); updateSummary();
+}
+
+function renderPieces() {
+  const el = document.getElementById('pieces-list');
+  if (!pieces.length) {
+    el.innerHTML = '<div class="empty">no pieces yet — add one above</div>';
+    return;
+  }
+  el.innerHTML = pieces.map(p => {
+    const running = !!intervals[p.id];
+    const displaySecs = running ? (timers[p.id]||0) : totalSecs(p);
+    const sessions = [...(p.sessions||[])].reverse().slice(0,4);
+    return `<div class="piece-card">
+      <div class="piece-head">
+        <div class="piece-name">${escHtml(p.name)}</div>
+        <div class="piece-head-right">
+          <span class="stage-pill ${STAGE_CLASS[p.stage]}" onclick="cycleStage('${p.id}')">${STAGE_LABELS[p.stage]}</span>
+          <button class="delete-btn" onclick="deletePiece('${p.id}')">×</button>
+        </div>
+      </div>
+      <div class="time-row">
+        <div>
+          <div class="time-display" id="td-${p.id}">${fmtTime(displaySecs)}</div>
+          <div class="time-sub">${running ? 'recording...' : (p.sessions.length + ' session' + (p.sessions.length!==1?'s':''))}</div>
+        </div>
+        <div class="timer-btns">
+          ${running
+            ? `<button class="btn sm stop" onclick="stopTimer('${p.id}')">■ stop</button>`
+            : `<button class="btn sm" onclick="startTimer('${p.id}')">▶ start</button>`}
+        </div>
+      </div>
+      ${sessions.length ? `<div class="log-entry">
+        ${sessions.map(s=>`<div class="log-line"><span>${s.label}</span><span>${fmtTime(s.secs)}</span></div>`).join('')}
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Materials ─────────────────────────────────────────────
+function addMaterial() {
+  const name = document.getElementById('mat-name').value.trim();
+  const cost = parseFloat(document.getElementById('mat-cost').value);
+  if (!name || isNaN(cost) || cost <= 0) { showToast('Enter name and cost'); return; }
+  materials.push({id:uid(), name, cost, date: today()});
+  document.getElementById('mat-name').value = '';
+  document.getElementById('mat-cost').value = '';
+  save(); renderMaterials(); updateSummary();
+  showToast('$'+cost.toFixed(2)+' logged');
+}
+
+document.getElementById('mat-cost').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addMaterial();
+});
+
+function deleteMaterial(id) {
+  if (!confirm('Delete this entry?')) return;
+  materials = materials.filter(x => x.id!==id);
+  save(); renderMaterials(); updateSummary();
+}
+
+function renderMaterials() {
+  const el = document.getElementById('materials-list');
+  const total = materials.reduce((a,m) => a+m.cost, 0);
+  document.getElementById('mat-total').textContent = '$'+total.toFixed(2);
+  if (!materials.length) {
+    el.innerHTML = '<div class="empty">no purchases logged yet</div>';
+    return;
+  }
+  el.innerHTML = [...materials].reverse().map(m => `
+    <div class="mat-card">
+      <div class="mat-info">
+        <div class="mat-name">${escHtml(m.name)}</div>
+        <div class="mat-date">${m.date}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <div class="mat-cost">$${m.cost.toFixed(2)}</div>
+        <button class="delete-btn" onclick="deleteMaterial('${m.id}')">×</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Summary ───────────────────────────────────────────────
+function updateSummary() {
+  document.getElementById('s-pieces').textContent = pieces.length;
+  const tot = pieces.reduce((a,p) => a+totalSecs(p), 0);
+  document.getElementById('s-hours').textContent =
+    Math.floor(tot/3600)+'h '+Math.floor((tot%3600)/60)+'m';
+  document.getElementById('s-cost').textContent =
+    '$'+materials.reduce((a,m) => a+m.cost, 0).toFixed(0);
+}
+
+// ── Calendar ──────────────────────────────────────────────
+const CAL_MONTHS = [
+  {name:'April',   idx:3},
+  {name:'May',     idx:4},
+  {name:'June',    idx:5},
+  {name:'July',    idx:6},
+  {name:'August',  idx:7},
+  {name:'September',idx:8},
+  {name:'October', idx:9},
+];
+const CAL_YEAR = 2026;
+const MON_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function getTrackedDates() {
+  const set = new Set();
+  pieces.forEach(p => {
+    (p.sessions||[]).forEach(s => {
+      // label: "Apr 16 2:00 PM" — grab first two tokens
+      const parts = s.label.split(' ');
+      if (parts.length >= 2) set.add(parts[0]+' '+parts[1]);
+    });
+  });
+  return set;
+}
+
+function renderCalendar() {
+  const tracked = getTrackedDates();
+  const now = new Date();
+  const el = document.getElementById('calendar-grid');
+  el.innerHTML = CAL_MONTHS.map(({name, idx}) => {
+    const firstDow = new Date(CAL_YEAR, idx, 1).getDay();
+    const daysInMonth = new Date(CAL_YEAR, idx+1, 0).getDate();
+    let cells = '';
+    for (let i = 0; i < firstDow; i++) cells += '<div class="cal-mini-day empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = MON_ABBR[idx]+' '+d;
+      const isTracked = tracked.has(key);
+      const isToday = now.getFullYear()===CAL_YEAR && now.getMonth()===idx && now.getDate()===d;
+      const isFuture = new Date(CAL_YEAR, idx, d) > now;
+      let cls = 'cal-mini-day';
+      if (isTracked) cls += ' tracked';
+      else if (isFuture) cls += ' future';
+      if (isToday) cls += ' today';
+      cells += `<div class="${cls}"></div>`;
+    }
+    return `<div class="cal-mini-month">
+      <div class="cal-mini-name">${name.slice(0,3)}</div>
+      <div class="cal-mini-days">${cells}</div>
+    </div>`;
+  }).join('');
+  // scroll to current month
+  const monthIdx = CAL_MONTHS.findIndex(m => m.idx === now.getMonth());
+  if (monthIdx >= 0) {
+    const cols = el.querySelectorAll('.cal-mini-month');
+    if (cols[monthIdx]) cols[monthIdx].scrollIntoView({behavior:'instant',block:'nearest',inline:'center'});
+  }
+}
+
+function getSessionsByDate() {
+  const map = {};
+  pieces.forEach(p => {
+    (p.sessions||[]).forEach(s => {
+      const parts = s.label.split(' ');
+      if (parts.length >= 2) {
+        const key = parts[0]+' '+parts[1];
+        map[key] = (map[key]||0) + s.secs;
+      }
+    });
+  });
+  return map;
+}
+
+function fmtTimeShort(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h > 0 ? `${h}h${m>0?m+'m':''}` : `${m}m`;
+}
+
+function renderCalExpanded() {
+  const byDate = getSessionsByDate();
+  const now = new Date();
+  const el = document.getElementById('cal-expanded-grid');
+  el.innerHTML = CAL_MONTHS.map(({name, idx}) => {
+    const firstDow = new Date(CAL_YEAR, idx, 1).getDay();
+    const daysInMonth = new Date(CAL_YEAR, idx+1, 0).getDate();
+    let cells = '';
+    for (let i = 0; i < firstDow; i++) cells += '<div class="cal-exp-day empty"></div>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = MON_ABBR[idx]+' '+d;
+      const secs = byDate[key]||0;
+      const isTracked = secs > 0;
+      const isToday = now.getFullYear()===CAL_YEAR && now.getMonth()===idx && now.getDate()===d;
+      const isFuture = new Date(CAL_YEAR, idx, d) > now;
+      let cls = 'cal-exp-day';
+      if (isTracked) cls += ' tracked';
+      else if (isFuture) cls += ' future';
+      if (isToday) cls += ' today';
+      cells += `<div class="${cls}">
+        <span class="cal-exp-day-num">${d}</span>
+        ${isTracked ? `<span class="cal-exp-day-time">${fmtTimeShort(secs)}</span>` : ''}
+      </div>`;
+    }
+    return `<div class="cal-exp-month">
+      <div class="cal-exp-name">${name}</div>
+      <div class="cal-exp-dow"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+      <div class="cal-exp-days">${cells}</div>
+    </div>`;
+  }).join('');
+}
+
+let calOpen = false;
+function toggleCalendar() {
+  calOpen = !calOpen;
+  document.getElementById('cal-overlay').classList.toggle('open', calOpen);
+  document.getElementById('cal-chevron').classList.toggle('open', calOpen);
+  if (calOpen) {
+    renderCalExpanded();
+    // scroll expanded view to current month
+    const now = new Date();
+    const monthIdx = CAL_MONTHS.findIndex(m => m.idx === now.getMonth());
+    if (monthIdx > 0) {
+      setTimeout(() => {
+        const months = document.querySelectorAll('.cal-exp-month');
+        if (months[monthIdx]) months[monthIdx].scrollIntoView({behavior:'smooth',block:'start'});
+      }, 320);
+    }
+  }
+}
+
+// ── Util ──────────────────────────────────────────────────
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Service Worker ────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+
+// ── Init ──────────────────────────────────────────────────
+renderPieces();
+renderMaterials();
+updateSummary();
+renderCalendar();
+</script>
+
+<!-- Generate placeholder icons via canvas (no external dependency) -->
+<script>
+function makeIcon(size) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#1E1E1E';
+  ctx.fillRect(0,0,size,size);
+  // Orange circle
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size*0.38, 0, Math.PI*2);
+  ctx.fillStyle = '#E8722A';
+  ctx.fill();
+  // "S" letter
+  ctx.fillStyle = '#F0E8D8';
+  ctx.font = `bold ${size*0.38}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('S', size/2, size/2+size*0.02);
+  return c.toDataURL('image/png');
+}
+// Inject apple-touch-icon from canvas
+const icon192 = makeIcon(192);
+document.querySelector('link[rel="apple-touch-icon"]').href = icon192;
+</script>
+</body>
+</html>
